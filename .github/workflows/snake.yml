@@ -1,4 +1,4 @@
-name: Generate contribution snake
+name: Generate profile visuals
 
 on:
   workflow_dispatch:
@@ -15,9 +15,12 @@ permissions:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - name: Generate SVGs for light and dark themes
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Generate contribution snakes (light / dark)
         uses: Platane/snk/svg-only@v3
         with:
           github_user_name: ${{ github.repository_owner }}
@@ -25,7 +28,24 @@ jobs:
             dist/github-snake.svg?palette=github-light
             dist/github-snake-dark.svg?palette=github-dark
 
-      - name: Publish SVGs to the output branch
+      - name: Generate activity graph (dark)
+        uses: maurodesouza/github-readme-activity-graph-action@v1
+        with:
+          username: ${{ github.repository_owner }}
+          options: 'theme=tokyo-night&hide_border=true&area=true&days=31&custom_title=Recent%20GitHub%20Activity'
+          output_path: dist/github-activity-dark.svg
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate activity graph (light)
+        uses: maurodesouza/github-readme-activity-graph-action@v1
+        with:
+          username: ${{ github.repository_owner }}
+          options: 'theme=github&hide_border=true&area=true&days=31&custom_title=Recent%20GitHub%20Activity'
+          output_path: dist/github-activity-light.svg
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Publish all four SVGs together; separate workflows could overwrite each other's output.
+      - name: Publish generated SVG files
         uses: crazy-max/ghaction-github-pages@v5
         with:
           target_branch: output
